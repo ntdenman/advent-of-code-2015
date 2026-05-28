@@ -3,31 +3,39 @@ import numpy as np
 in_file_name = "./day-7-input.dat"
 
 circuit = []
+cache = []
 
-def find_component(com_id):
+def find_component(comp_id):
+    for i in range(len(cache)):
+        if cache[i][0] == comp_id:
+            return [comp_id, 'imm', cache[i][1], 0]
     for i in range(len(circuit)):
-        if circuit[i][0] == com_id:
+        if circuit[i][0] == comp_id:
             return circuit[i]
 
 def get_value(comp_id):
-    if(comp_id.isdigit()):
+    if isinstance(comp_id, np.uint16):
+        return comp_id
+    elif(comp_id.isdigit()):
         return np.uint16(comp_id)
     else:
         comp = find_component(comp_id)
         if comp[1] == 'imm':
             return get_value(comp[2])
         elif comp[1] == 'not':
-            return np.invert(get_value(comp[2]))
+            ret_val = np.invert(get_value(comp[2]))
         elif comp[1] == 'AND':
-            return np.bitwise_and(get_value(comp[2]), get_value(comp[3]))
+            ret_val = np.bitwise_and(get_value(comp[2]), get_value(comp[3]))
         elif comp[1] == 'OR':
-            return np.bitwise_or(get_value(comp[2]), get_value(comp[3]))
+            ret_val = np.bitwise_or(get_value(comp[2]), get_value(comp[3]))
         elif comp[1] == 'LSHIFT':
-            return np.left_shift(get_value(comp[2]), get_value(comp[3]))
+            ret_val = np.left_shift(get_value(comp[2]), get_value(comp[3]))
         elif comp[1] == 'RSHIFT':
-            return np.right_shift(get_value(comp[2]), get_value(comp[3]))
+            ret_val = np.right_shift(get_value(comp[2]), get_value(comp[3]))
         else:
             raise AssertionError
+        cache.append([comp_id, ret_val])
+        return ret_val
 
 # loads up the circuit into a legible format
 with open(in_file_name, mode="rt") as infile:
