@@ -85,17 +85,12 @@ with open(in_file_name, mode="rt") as infile:
 
 print(pkgs)
 
-num_groups = 3
+num_groups = 4
 group_weight = int(sum(pkgs) // num_groups)
 
 # Find all combinations which meet the target weight of packages
 init_solns = []
-
-# Doing this simply ran into the recursion limit
-#visit([len(pkgs)], 0, group_weight, pkgs, init_solns) # F1
-
-# So I'm using the loop format solver rewrite
-knap_loop(group_weight, pkgs, init_solns) # F1
+knap_loop(group_weight, pkgs, init_solns)
 
 # Then sort them by the package count 
 init_solns.sort(key=len)
@@ -106,7 +101,8 @@ min_len = len(pkgs)
 min_qe = np.prod(pkgs, dtype=np.float64) #int64 too small
 
 # Now to check the initial solutions for balance
-for i, soln in enumerate(init_solns):
+# Note: now have to check that there exist _two_ additional balanced groups
+for soln in init_solns:
     if len(soln) > min_len:
         print("Longer than shortest option")
         break # solns are in order
@@ -122,15 +118,13 @@ for i, soln in enumerate(init_solns):
         #print("QE not lower than current min", qe, min_qe)
         continue
 
-    # And remove those ised from the remaining list
+    # And remove those used from the remaining list
     pkg_left = copy.copy(pkgs)
     for wt in sol_wts:
         pkg_left.remove(wt)
 
-    # For simplicity, reusing the prev. code to find if the remaining packages can be balanced
     second_solns = []
-    #visit([len(pkg_left)], 0, group_weight, pkg_left, second_solns)
-    knap_loop(group_weight, pkg_left, second_solns) # F1
+    knap_loop(group_weight, pkg_left, second_solns)
 
     if len(second_solns) == 0:
         # The remaining packages can't be evenly balanced
@@ -138,10 +132,34 @@ for i, soln in enumerate(init_solns):
         continue
 
     else:
-        print(sol_wts, np.product(sol_wts), "balances")
-        min_len = len(sol_wts)
-        if qe < min_qe:
-            min_qe = qe
-            print("new low:", min_qe)
+        # now know that there's at least one balancing group
+        # but for four total, we need to find an additional one
+        # using only the remaining packages
+        # it's basically the above but we only care if a sol'n exists
+        can_rebalance = False
+        for soln_2 in second_solns:
+            sol_wts_2 = []
+            for ct2 in soln_2:
+                sol_wts_2.append(pkg_left[ct2])
+            pkg_left_2 = copy.copy(pkg_left)
+            for wt2 in sol_wts_2:
+                pkg_left_2.remove(wt2)
+            third_solns = []
+            knap_loop(group_weight, pkg_left_2, third_solns)
+            if len(third_solns) == 0:
+                continue
+            else:
+                # a solution exists
+                can_rebalance = True
+                break
+        if not can_rebalance:
+            print(sol_wts, np.product(sol_wts), "can't rebalance")
+            continue
+        else:
+            print(sol_wts, np.product(sol_wts), "balances")
+            min_len = len(sol_wts)
+            if qe < min_qe:
+                min_qe = qe
+                print("new low:", min_qe)
 
 print("done, lowest QE is:", min_qe)
