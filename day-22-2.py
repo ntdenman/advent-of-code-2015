@@ -35,6 +35,13 @@ wins = [99999]
 
 def take_turns(pl_stats, bs_stats, timers, mana_costs, mana_spent, wins, casts):
     # begin with the player's turn
+
+    # Hardmode:
+    pl_stats["hp"] -= 1
+    if pl_stats["hp"] <= 0:
+        #print("Loss")
+        return wins 
+
     # first, evaluate any ongoing effects:
     if timers["shield"] > 0:
         timers["shield"] -= 1
